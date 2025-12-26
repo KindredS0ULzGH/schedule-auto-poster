@@ -1,47 +1,32 @@
 import puppeteer from "puppeteer";
 import fetch from "node-fetch";
+import fs from "fs";
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL;  
 const PAGE_URL = "https://kaikatvt.carrd.co/#schedule";
+const IMAGE_PATH = "schedule.png";
 
-async function takeScreenshot() {
+async function run() {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: "new"
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 800 });
+  await page.setViewport({ width: 1280, height: 900 });
   await page.goto(PAGE_URL, { waitUntil: "networkidle2" });
+  await page.waitForTimeout(3000);
 
-  await page.waitForTimeout(2000); // wait for render
-  const screenshot = await page.screenshot();
-
+  await page.screenshot({ path: IMAGE_PATH });
   await browser.close();
-  return screenshot;
-}
 
-async function sendDiscord(screenshot) {
-  const formData = new FormData();
-  formData.append("file", screenshot, "schedule.png");
-  formData.append(
-    "content",
-    "**Weekly Schedule Updated!** Check out the new schedule."
-  );
+  const form = new FormData();
+  form.append("content", "**📅 New Weekly Stream Schedule**");
+  form.append("file", fs.createReadStream(IMAGE_PATH));
 
-  await fetch(WEBHOOK_URL, {
+  await fetch(process.env.DISCORD_WEBHOOK, {
     method: "POST",
-    body: formData,
+    body: form
   });
 }
 
-export default async function main() {
-  try {
-    const image = await takeScreenshot();
-    await sendDiscord(image);
-    console.log("Posted to Discord!");
-  } catch (e) {
-    console.error("Error", e);
-  }
-}
-
-main();
+run();
