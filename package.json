@@ -1,0 +1,11 @@
+{
+  "name": "schedule-discord-bot",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^20.0.0",
+    "node-fetch": "^3.3.1"
+  }
+}
