@@ -2,7 +2,7 @@ name: Post Weekly Schedule
 
 on:
   schedule:
-    - cron: "0 12 * * MON"  # every Monday at 12:00 UTC
+    - cron: "0 12 * * WED"  # every Wednesday at 12:00 UTC
   workflow_dispatch:        # allows manual run
 
 jobs:
