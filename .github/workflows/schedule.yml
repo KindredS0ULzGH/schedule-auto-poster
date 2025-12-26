@@ -2,18 +2,33 @@ name: Post Weekly Schedule
 
 on:
   schedule:
-    - cron: "0 12 * * MON"
-  workflow_dispatch:
+    - cron: "0 12 * * MON"  # every Monday at 12:00 UTC
+  workflow_dispatch:        # allows manual run
 
 jobs:
   post:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Checkout your repo
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+
+      # 2️⃣ Setup Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: "20"
-      - run: npm install
-      - run: node index.js
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+      # 3️⃣ Cache node_modules and npm packages
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4️⃣ Install dependencies (fast if cache exists)
+      - name: Install dependencies
