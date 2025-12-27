@@ -1,11 +1,18 @@
 {
-  "name": "schedule-discord-bot",
+  "name": "schedule-auto-poster",
   "version": "1.0.0",
+  "description": "Automatically posts weekly schedule to Discord",
+  "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^20.0.0",
-    "node-fetch": "^3.3.1"
+    "puppeteer": "^23.3.1",
+    "node-fetch": "^3.4.1",
+    "form-data": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
