@@ -1,10 +1,10 @@
-name: Post Weekly Schedule
+name: Auto Post Schedule
 
 on:
   schedule:
-    # Every Wednesday at 7:00 AM EST (UTC 12:00)
-    - cron: '0 12 * * 3'
-  workflow_dispatch: # allows manual run
+    # Runs every 30 minutes (UTC)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # allows manual trigger
 
 jobs:
   post_schedule:
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install
-          npx puppeteer install # ensures Chromium is downloaded
+          npx puppeteer install # ensures Chromium is installed
 
       - name: Run schedule bot
         env:
