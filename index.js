@@ -14,14 +14,11 @@ async function run() {
   });
 
   const page = await browser.newPage();
-
-  // Set a wide viewport for crisp high-res screenshot
   await page.setViewport({ width: 1440, height: 2000 });
-
   await page.goto(PAGE_URL, { waitUntil: "networkidle2" });
   await page.waitForTimeout(2000);
 
-  // Target the schedule container
+  // Select the schedule container
   const scheduleElement = await page.$("#table03");
   if (!scheduleElement) {
     console.log("Schedule element not found. Exiting.");
@@ -29,16 +26,15 @@ async function run() {
     return;
   }
 
-  // Get element bounding box and resize viewport if needed
+  // Get element size and resize viewport
   const box = await scheduleElement.boundingBox();
   await page.setViewport({
     width: Math.ceil(box.width),
     height: Math.ceil(box.height)
   });
 
-  // Take screenshot of the element only
+  // Screenshot only the element
   await scheduleElement.screenshot({ path: IMAGE_PATH });
-
   await browser.close();
 
   // Check if schedule has changed
@@ -47,4 +43,37 @@ async function run() {
     oldHash = fs.readFileSync("last-schedule-hash.txt", "utf8");
   }
 
-  const newHash = crypto.createHash("md5").u
+  const newHash = crypto.createHash("md5").update(fs.readFileSync(IMAGE_PATH)).digest("hex");
+
+  if (oldHash === newHash) {
+    console.log("Schedule has not changed. Exiting.");
+    return;
+  }
+
+  fs.writeFileSync("last-schedule-hash.txt", newHash);
+
+  // Send to Discord
+  const form = new FormData();
+  form.append(
+    "payload_json",
+    JSON.stringify({
+      content: "<@&1353762877705682984> 📅 **This Week's Stream Schedule!**",
+      embeds: [
+        {
+          title: "This Week's Stream Schedule",
+          description: "Here is the updated schedule for the week!",
+          color: 0xE7C2FF,
+          image: {
+            url: "attachment://schedule.png"
+          }
+        }
+      ]
+    })
+  );
+  form.append("file", fs.createReadStream(IMAGE_PATH), "schedule.png");
+
+  await fetch(process.env.DISCORD_WEBHOOK, { method: "POST", body: form });
+  console.log("Posted new schedule to Discord!");
+}
+
+run();
