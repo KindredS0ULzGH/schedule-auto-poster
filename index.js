@@ -69,7 +69,7 @@ async function run() {
   form.append(
     "payload_json",
     JSON.stringify({
-      content: "<null> 📅 ** New Week, New Stream Schedule!**",
+      content: " 📅 **New Week, New Stream Schedule!**",
       embeds: [
         {
           title: "This Week's Stream Schedule",
