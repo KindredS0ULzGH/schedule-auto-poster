@@ -16,7 +16,9 @@ async function run() {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 2000 });
   await page.goto(PAGE_URL, { waitUntil: "networkidle2" });
-  await page.waitForTimeout(2000);
+
+  // Wait 2 seconds for animations/images
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Select the schedule container
   const scheduleElement = await page.$("#table03");
@@ -43,7 +45,10 @@ async function run() {
     oldHash = fs.readFileSync("last-schedule-hash.txt", "utf8");
   }
 
-  const newHash = crypto.createHash("md5").update(fs.readFileSync(IMAGE_PATH)).digest("hex");
+  const newHash = crypto
+    .createHash("md5")
+    .update(fs.readFileSync(IMAGE_PATH))
+    .digest("hex");
 
   if (oldHash === newHash) {
     console.log("Schedule has not changed. Exiting.");
@@ -57,11 +62,12 @@ async function run() {
   form.append(
     "payload_json",
     JSON.stringify({
-      content: "<@&1353762877705682984> 📅 **This Week's Stream Schedule!**",
+      content: "<@&1353762877705682984> 📅 **New Weekly Stream Schedule!**",
       embeds: [
         {
           title: "This Week's Stream Schedule",
-          description: "Here is the updated schedule for the week!",
+          description:
+            "Here is the updated schedule for the week! Make sure to check your timezones 🕒",
           color: 0xE7C2FF,
           image: {
             url: "attachment://schedule.png"
