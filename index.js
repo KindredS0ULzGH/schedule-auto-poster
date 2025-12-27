@@ -14,7 +14,6 @@ async function run() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 2000 });
   await page.goto(PAGE_URL, { waitUntil: "networkidle2" });
 
   // Wait 2 seconds for animations/images
@@ -28,15 +27,23 @@ async function run() {
     return;
   }
 
-  // Get element size and resize viewport
+  // Get element size
   const box = await scheduleElement.boundingBox();
+
+  // Set viewport to element size with high resolution
+  const deviceScaleFactor = 2; // doubles pixel density
   await page.setViewport({
     width: Math.ceil(box.width),
-    height: Math.ceil(box.height)
+    height: Math.ceil(box.height),
+    deviceScaleFactor
   });
 
-  // Screenshot only the element
-  await scheduleElement.screenshot({ path: IMAGE_PATH });
+  // Screenshot only the element in high resolution
+  await scheduleElement.screenshot({ 
+    path: IMAGE_PATH, 
+    type: "png", 
+    omitBackground: false 
+  });
   await browser.close();
 
   // Check if schedule has changed
@@ -62,12 +69,12 @@ async function run() {
   form.append(
     "payload_json",
     JSON.stringify({
-      content: "<@&1353762877705682984> 📅 **New Weekly Stream Schedule!**",
+      content: "<null> 📅 ** New Week, New Stream Schedule!**",
       embeds: [
         {
           title: "This Week's Stream Schedule",
-          description:
-            "Here is the updated schedule for the week! Make sure to check your timezones 🕒",
+          url: PAGE_URL, // clickable title
+          description: "Hot and Fresh Schedule update! Come check it while you can so you never miss your favorite Kat ≽^•⩊•^≼",
           color: 0xE7C2FF,
           image: {
             url: "attachment://schedule.png"
