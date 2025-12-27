@@ -2,9 +2,9 @@ name: Post Weekly Schedule
 
 on:
   schedule:
-    - cron: "0 12 * * WED"  # every Wednesday at 12:00 UTC
-  workflow_dispatch:        # allows manual run
-
+    - cron: "0 12 * * WED"
+  workflow_dispatch:
+  
 jobs:
   post:
     runs-on: ubuntu-latest
