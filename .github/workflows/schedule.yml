@@ -2,7 +2,7 @@ name: Schedule Auto Poster
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # every 30 minutes
+    - cron: "0 12 * * 3"  # Every Wednesday at 12:00 UTC → 7:00 AM EST
   workflow_dispatch:      # still allows manual triggering
 
 jobs:
