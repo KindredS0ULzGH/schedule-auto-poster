@@ -1,20 +1,11 @@
-name: Schedule Auto Poster
-
-on:
-  schedule:
-    # Every Wednesday at 7:00 AM EST → 12:00 UTC
-    - cron: "0 12 * * 3"
-  workflow_dispatch: # Manual trigger
-
 jobs:
   run-schedule-bot:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -26,11 +17,3 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node index.js
-
-      - name: Commit last posted hash
-        run: |
-          git config user.name "schedule-bot"
-          git config user.email "bot@users.noreply.github.com"
-          git add .last_posted_hash.txt
-          git commit -m "Update last posted hash" || echo "No changes to commit"
-          git push
