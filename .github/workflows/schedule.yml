@@ -3,13 +3,17 @@ name: Schedule Auto Poster
 on:
   schedule:
     - cron: "0 12 * * 3" # Wednesday 7AM EST (12:00 UTC)
-  workflow_dispatch:
+  workflow_dispatch: # allows manual triggering
 
 jobs:
   post-schedule:
     runs-on: ubuntu-latest
+    env:
+      # Set your Discord webhook secret here in GitHub, name it DISCORD_WEBHOOK
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
