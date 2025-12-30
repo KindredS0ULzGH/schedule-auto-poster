@@ -6,7 +6,7 @@ import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "1353762877705682984";
+const ROLE_ID = "s";
 const HASH_FILE = ".last_posted_hash.txt";
 
 function getHash(text) {
