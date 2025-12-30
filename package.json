@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "puppeteer": "^21.3.0",
-    "node-fetch": "^3.4.1",
+    "node-fetch": "^3.3.2",
     "undici": "^5.17.0"
   }
 }
