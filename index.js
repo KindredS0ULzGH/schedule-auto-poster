@@ -6,8 +6,11 @@ import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "s";
+const ROLE_ID = "1353762877705682984";
 const HASH_FILE = ".last_posted_hash.txt";
+
+// Ensure hash file exists
+if (!fs.existsSync(HASH_FILE)) fs.writeFileSync(HASH_FILE, "");
 
 function getHash(text) {
   return crypto.createHash("sha256").update(text).digest("hex");
@@ -39,7 +42,7 @@ async function run() {
 
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
-  // Get schedule table text (7 days only)
+  // Get schedule table text only
   const scheduleText = await page.$eval("#table03 table", el => el.innerText.trim());
   const hash = getHash(scheduleText);
   const lastHash = readLastHash();
@@ -77,12 +80,12 @@ async function run() {
   // Update hash locally
   writeLastHash(hash);
 
-  // Discord webhook
+  // Send Discord webhook
   const form = new FormData();
   form.append(
     "payload_json",
     JSON.stringify({
-      content: `<@&${ROLE_ID}> **A Schedule Update is here!**`,
+      content: `<@&${ROLE_ID}>📅 **A Schedule Update is here!**`,
       embeds: [
         {
           title: "📅 Stream Schedule Update",
