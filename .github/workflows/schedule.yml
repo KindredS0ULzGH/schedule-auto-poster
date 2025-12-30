@@ -2,14 +2,13 @@ name: Schedule Auto Poster
 
 on:
   schedule:
-    - cron: "* * * * *"  # every minute
-  workflow_dispatch:    # still allows manual triggering
+    - cron: "0 12 * * 3" # Wednesday 7AM EST (12:00 UTC)
+  workflow_dispatch: # allows manual triggering
 
 jobs:
   post-schedule:
     runs-on: ubuntu-latest
     env:
-      # Set your Discord webhook secret here in GitHub, name it DISCORD_WEBHOOK
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
       - name: Checkout repo
