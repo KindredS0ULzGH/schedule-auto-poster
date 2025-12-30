@@ -1,7 +1,7 @@
 import fs from "fs";
 import crypto from "crypto";
-import puppeteer from "puppeteer";
-import FormData from "form-data"; // use form-data package
+import puppeteer from "puppeteer-core";
+import FormData from "form-data";
 import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
@@ -9,14 +9,30 @@ const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const ROLE_ID = "1353762877705682984";
 const LAST_HASH_FILE = ".last_posted_hash.txt";
 
-// ...hash functions remain the same...
+// Hash helper
+function getHash(text) {
+  return crypto.createHash("sha256").update(text).digest("hex");
+}
+
+// Read last posted hash
+function readLastHash() {
+  return fs.existsSync(LAST_HASH_FILE)
+    ? fs.readFileSync(LAST_HASH_FILE, "utf8")
+    : null;
+}
+
+// Write last posted hash
+function writeLastHash(hash) {
+  fs.writeFileSync(LAST_HASH_FILE, hash);
+}
 
 async function run() {
   console.log("Checking schedule...");
 
   const browser = await puppeteer.launch({
     headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: "/usr/bin/google-chrome",
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
   });
 
   const page = await browser.newPage();
@@ -24,10 +40,8 @@ async function run() {
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
   const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
-  const hash = crypto.createHash("sha256").update(scheduleText).digest("hex");
-  const lastHash = fs.existsSync(LAST_HASH_FILE)
-    ? fs.readFileSync(LAST_HASH_FILE, "utf8")
-    : null;
+  const hash = getHash(scheduleText);
+  const lastHash = readLastHash();
 
   console.log("Current hash:", hash);
   console.log("Last posted hash:", lastHash);
@@ -38,17 +52,16 @@ async function run() {
     return;
   }
 
-  // Screenshot
+  // Screenshot container
   const container = await page.$("#container03");
   const screenshotBuffer = await container.screenshot({ type: "png" });
-  await browser.close();
-
   fs.writeFileSync(".schedule.png", screenshotBuffer);
 
-  // Update last hash
-  fs.writeFileSync(LAST_HASH_FILE, hash);
+  await browser.close();
 
-  // Use form-data
+  // Update last hash
+  writeLastHash(hash);
+
   const form = new FormData();
   form.append(
     "payload_json",
@@ -61,11 +74,12 @@ async function run() {
             "Hot and Fresh Schedule update! Come check it while you can so you never miss your favorite Kat ≽^•⩊•^≼",
           url: SCHEDULE_URL,
           color: 0xe7c2ff,
-          image: { url: "attachment://schedule.png" },
-        },
-      ],
+          image: { url: "attachment://schedule.png" }
+        }
+      ]
     })
   );
+
   form.append("file", fs.createReadStream(".schedule.png"));
 
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
