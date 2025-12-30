@@ -61,4 +61,63 @@ async function run() {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
-  const page =
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+  await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
+
+  const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
+  const newHash = hash(scheduleText);
+  const oldHash = read(HASH_FILE);
+
+  console.log("Hash old:", oldHash);
+  console.log("Hash new:", newHash);
+
+  // 🔒 LOCK #3 — Content unchanged
+  if (oldHash === newHash) {
+    console.log("No schedule change — exiting.");
+    await browser.close();
+    return;
+  }
+
+  // 🔒 LOCK #4 — Hard cooldown
+  const lastTime = read(TIME_FILE);
+  if (lastTime && hoursSince(lastTime) < COOLDOWN_HOURS) {
+    console.log("Cooldown active — exiting.");
+    await browser.close();
+    return;
+  }
+
+  const container = await page.$("#container03");
+  const screenshot = await container.screenshot({ type: "png" });
+  await browser.close();
+
+  write(HASH_FILE, newHash);
+  write(TIME_FILE, Date.now());
+  write(DATE_FILE, today);
+
+  const form = new FormData();
+  form.append(
+    "payload_json",
+    JSON.stringify({
+      content: `<@&${ROLE_ID}>`,
+      embeds: [
+        {
+          title: "📅 Stream Schedule Update",
+          description:
+            "Hot and Fresh Schedule update! Come check it while you can so you never miss your favorite Kat ≽^•⩊•^≼",
+          url: SCHEDULE_URL,
+          color: 0xe7c2ff,
+          image: { url: "attachment://schedule.png" },
+        },
+      ],
+    })
+  );
+
+  form.append("file", screenshot, "schedule.png");
+
+  await fetch(WEBHOOK_URL, { method: "POST", body: form });
+
+  console.log("Posted successfully.");
+}
+
+run();
