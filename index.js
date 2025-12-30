@@ -6,7 +6,7 @@ import FormData from "form-data";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "nvm";
+const ROLE_ID = "1353762877705682984";
 
 const LAST_HASH_FILE = ".last_posted_hash.txt";
 
@@ -25,6 +25,8 @@ function writeLastHash(hash) {
 }
 
 async function run() {
+  console.log("Checking schedule...");
+
   const browser = await puppeteer.launch({
     headless: "new",
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
