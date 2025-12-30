@@ -1,13 +1,12 @@
 import fs from "fs";
 import crypto from "crypto";
 import puppeteer from "puppeteer";
+import { FormData, fileFromSync } from "undici";
 import fetch from "node-fetch";
-import FormData from "form-data";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const ROLE_ID = "1353762877705682984";
-
 const LAST_HASH_FILE = ".last_posted_hash.txt";
 
 function getHash(text) {
@@ -49,16 +48,20 @@ async function run() {
     return;
   }
 
-  // Take screenshot of the schedule container
+  // Screenshot schedule container
   const container = await page.$("#container03");
   const screenshotBuffer = await container.screenshot({ type: "png" });
   await browser.close();
 
-  // Update last hash BEFORE posting to prevent duplicate posts
+  // Save temp file for undici fileFromSync
+  const tempFilePath = ".schedule.png";
+  fs.writeFileSync(tempFilePath, screenshotBuffer);
+
+  // Update last hash BEFORE posting
   writeLastHash(hash);
 
   const form = new FormData();
-  form.append(
+  form.set(
     "payload_json",
     JSON.stringify({
       content: `<@&${ROLE_ID}>`,
@@ -75,14 +78,13 @@ async function run() {
     })
   );
 
-  // Append screenshot as a readable stream from Buffer
-  form.append("file", screenshotBuffer, {
-    filename: "schedule.png",
-    contentType: "image/png",
-  });
+  form.set("file", fileFromSync(tempFilePath));
 
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
   console.log("Posted new schedule version successfully.");
+
+  // Clean up temp file
+  fs.unlinkSync(tempFilePath);
 }
 
 run();
