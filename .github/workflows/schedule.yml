@@ -1,42 +1,36 @@
-name: Auto Post Schedule
+name: Schedule Auto Poster
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # every 30 minutes
+    # Every Wednesday at 7:00 AM Eastern (12:00 UTC)
+    - cron: "0 12 * * 3"
   workflow_dispatch:
 
 jobs:
-  post_schedule:
+  run-schedule-bot:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Restore schedule hash
-        uses: actions/cache@v4
-        with:
-          path: last-schedule-hash.txt
-          key: schedule-hash
-          restore-keys: schedule-hash
-
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install dependencies
-        run: |
-          npm install
-          npx puppeteer install
+        run: npm ci
 
       - name: Run schedule bot
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node index.js
 
-      - name: Save schedule hash
-        uses: actions/cache@v4
-        with:
-          path: last-schedule-hash.txt
-          key: schedule-hash
+      - name: Commit state files
+        run: |
+          git config user.name "schedule-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .last_schedule_hash.txt .last_post_time.txt .last_post_date.txt
+          git commit -m "Update schedule state" || echo "No changes to commit"
+          git push
