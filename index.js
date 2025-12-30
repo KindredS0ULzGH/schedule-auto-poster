@@ -36,6 +36,7 @@ async function run() {
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
+  // Grab schedule text for hash comparison
   const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
   const hash = getHash(scheduleText);
   const lastHash = readLastHash();
@@ -49,12 +50,16 @@ async function run() {
     return;
   }
 
+  // Take screenshot of schedule container
   const container = await page.$("#container03");
   const screenshot = await container.screenshot({ type: "png" });
   await browser.close();
 
-  // Update last hash before posting
+  // Update last hash BEFORE posting to prevent duplicate posts
   writeLastHash(hash);
+
+  // Convert screenshot buffer to Blob for form-data
+  const blob = new Blob([screenshot], { type: "image/png" });
 
   const form = new FormData();
   form.append(
@@ -74,7 +79,7 @@ async function run() {
     })
   );
 
-  form.append("file", screenshot, "schedule.png");
+  form.append("file", blob, "schedule.png");
 
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
   console.log("Posted new schedule version successfully.");
