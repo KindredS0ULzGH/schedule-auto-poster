@@ -2,27 +2,30 @@ name: Schedule Auto Poster
 
 on:
   schedule:
-    # Wednesday 7:00 AM EST = 12:00 UTC
-    - cron: "0 12 * * 3"
-  workflow_dispatch: # Manual run support
+    - cron: "0 12 * * 3" # Wednesday 7AM EST (12:00 UTC)
+  workflow_dispatch:
 
 jobs:
-  run-schedule-bot:
+  post-schedule:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install
 
       - name: Run schedule bot
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: node index.js
+        run: npm start
+
+      - name: Commit last posted hash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .last_posted_hash.txt
+          git commit -m "Update last posted hash [skip ci]" || echo "No changes to commit"
+          git push
