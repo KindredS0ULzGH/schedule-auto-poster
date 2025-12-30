@@ -36,9 +36,13 @@ async function run() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+
+  // High-resolution viewport for sharp screenshot
+  await page.setViewport({ width: 2560, height: 1440, deviceScaleFactor: 3 });
+
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
+  // Get schedule text for hashing
   const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
   const hash = getHash(scheduleText);
   const lastHash = readLastHash();
@@ -52,9 +56,13 @@ async function run() {
     return;
   }
 
-  // Screenshot container
+  // Screenshot only the schedule container
   const container = await page.$("#container03");
-  const screenshotBuffer = await container.screenshot({ type: "png" });
+  const screenshotBuffer = await container.screenshot({
+    type: "png",
+    omitBackground: true,
+    encoding: "binary"
+  });
   fs.writeFileSync(".schedule.png", screenshotBuffer);
 
   await browser.close();
@@ -62,6 +70,7 @@ async function run() {
   // Update last hash
   writeLastHash(hash);
 
+  // Prepare Discord webhook with embed + image
   const form = new FormData();
   form.append(
     "payload_json",
