@@ -6,7 +6,7 @@ import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "nvm";
+const ROLE_ID = "1353762877705682984";
 const LAST_HASH_FILE = ".last_posted_hash.txt";
 
 // Hash helper
@@ -63,7 +63,9 @@ async function run() {
   // Screenshot only the container with crisp quality
   const container = await page.$("#container03");
   await page.evaluate(el => el.scrollIntoView(), container);
-  await page.waitForTimeout(2000); // wait for fonts/images to fully render
+
+  // ✅ FIX: use standard JS delay instead of page.waitForTimeout
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   const box = await container.boundingBox();
   const screenshotBuffer = await page.screenshot({
