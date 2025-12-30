@@ -6,7 +6,7 @@ import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "s";
+const ROLE_ID = "1353762877705682984";
 const HASH_FILE = ".last_posted_hash.txt";
 
 function getHash(text) {
@@ -82,7 +82,7 @@ async function run() {
   form.append(
     "payload_json",
     JSON.stringify({
-      content: `<@&${ROLE_ID}>`,
+      content: `<@&${ROLE_ID}> **A Schedule Update is here!**`,
       embeds: [
         {
           title: "📅 Stream Schedule Update",
