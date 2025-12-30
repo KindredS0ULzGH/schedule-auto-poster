@@ -2,7 +2,7 @@ name: Schedule Auto Poster
 
 on:
   schedule:
-    # Every Wednesday at 7:00 AM Eastern (12:00 UTC)
+    # Every Wednesday at 7:00 AM EST → 12:00 UTC
     - cron: "0 12 * * 3"
   workflow_dispatch:
 
@@ -27,10 +27,10 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: node index.js
 
-      - name: Commit state files
+      - name: Commit last posted hash
         run: |
           git config user.name "schedule-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add .last_schedule_hash.txt .last_post_time.txt .last_post_date.txt
-          git commit -m "Update schedule state" || echo "No changes to commit"
+          git add .last_posted_hash.txt
+          git commit -m "Update last posted hash" || echo "No changes to commit"
           git push
