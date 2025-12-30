@@ -37,8 +37,12 @@ async function run() {
 
   const page = await browser.newPage();
 
-  // High-resolution viewport for sharp screenshot
-  await page.setViewport({ width: 2560, height: 1440, deviceScaleFactor: 3 });
+  // High-resolution viewport for crisp screenshot
+  await page.setViewport({
+    width: 3840,
+    height: 2160,
+    deviceScaleFactor: 3
+  });
 
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
@@ -56,15 +60,25 @@ async function run() {
     return;
   }
 
-  // Screenshot only the schedule container
+  // Screenshot only the container with crisp quality
   const container = await page.$("#container03");
-  const screenshotBuffer = await container.screenshot({
+  await page.evaluate(el => el.scrollIntoView(), container);
+  await page.waitForTimeout(2000); // wait for fonts/images to fully render
+
+  const box = await container.boundingBox();
+  const screenshotBuffer = await page.screenshot({
     type: "png",
+    clip: {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height)
+    },
     omitBackground: true,
     encoding: "binary"
   });
-  fs.writeFileSync(".schedule.png", screenshotBuffer);
 
+  fs.writeFileSync(".schedule.png", screenshotBuffer);
   await browser.close();
 
   // Update last hash
