@@ -6,24 +6,19 @@ import fetch from "node-fetch";
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const ROLE_ID = "nvm";
-const LAST_HASH_FILE = ".last_posted_hash.txt";
+const ROLE_ID = "1353762877705682984";
+const HASH_FILE = ".last_posted_hash.txt";
 
-// Hash helper
 function getHash(text) {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-// Read last posted hash
 function readLastHash() {
-  return fs.existsSync(LAST_HASH_FILE)
-    ? fs.readFileSync(LAST_HASH_FILE, "utf8")
-    : null;
+  return fs.existsSync(HASH_FILE) ? fs.readFileSync(HASH_FILE, "utf8") : null;
 }
 
-// Write last posted hash
 function writeLastHash(hash) {
-  fs.writeFileSync(LAST_HASH_FILE, hash);
+  fs.writeFileSync(HASH_FILE, hash);
 }
 
 async function run() {
@@ -36,8 +31,6 @@ async function run() {
   });
 
   const page = await browser.newPage();
-
-  // High-resolution viewport for crisp screenshot
   await page.setViewport({
     width: 3840,
     height: 2160,
@@ -46,8 +39,8 @@ async function run() {
 
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
-  // Get schedule text for hashing
-  const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
+  // Get schedule table text (7 days only)
+  const scheduleText = await page.$eval("#table03 table", el => el.innerText.trim());
   const hash = getHash(scheduleText);
   const lastHash = readLastHash();
 
@@ -60,14 +53,12 @@ async function run() {
     return;
   }
 
-  // Screenshot only the container with crisp quality
-  const container = await page.$("#container03");
-  await page.evaluate(el => el.scrollIntoView(), container);
+  // Screenshot only the 7-day schedule table
+  const table = await page.$("#table03 table");
+  await page.evaluate(el => el.scrollIntoView(), table);
+  await new Promise(r => setTimeout(r, 2000));
 
-  // ✅ FIX: use standard JS delay instead of page.waitForTimeout
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  const box = await container.boundingBox();
+  const box = await table.boundingBox();
   const screenshotBuffer = await page.screenshot({
     type: "png",
     clip: {
@@ -83,15 +74,15 @@ async function run() {
   fs.writeFileSync(".schedule.png", screenshotBuffer);
   await browser.close();
 
-  // Update last hash
+  // Update hash locally
   writeLastHash(hash);
 
-  // Prepare Discord webhook with embed + image
+  // Discord webhook
   const form = new FormData();
   form.append(
     "payload_json",
     JSON.stringify({
-      content: `<@&${ROLE_ID}>📅 A Schedule Update is here!`,
+      content: `<@&${ROLE_ID}>`,
       embeds: [
         {
           title: "📅 Stream Schedule Update",
@@ -104,13 +95,10 @@ async function run() {
       ]
     })
   );
-
   form.append("file", fs.createReadStream(".schedule.png"));
 
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
   console.log("Posted new schedule successfully.");
-
-  fs.unlinkSync(".schedule.png");
 }
 
 run();
