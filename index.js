@@ -1,8 +1,9 @@
 import fs from "fs";
 import crypto from "crypto";
 import puppeteer from "puppeteer";
-import { FormData, fileFromSync } from "undici";
 import fetch from "node-fetch";
+import pkg from "undici"; // <-- import undici as default
+const { FormData, fileFromSync } = pkg; // <-- destructure the functions
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
@@ -53,7 +54,7 @@ async function run() {
   const screenshotBuffer = await container.screenshot({ type: "png" });
   await browser.close();
 
-  // Save temp file for undici fileFromSync
+  // Save temp file for undici
   const tempFilePath = ".schedule.png";
   fs.writeFileSync(tempFilePath, screenshotBuffer);
 
@@ -83,7 +84,6 @@ async function run() {
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
   console.log("Posted new schedule version successfully.");
 
-  // Clean up temp file
   fs.unlinkSync(tempFilePath);
 }
 
