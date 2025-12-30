@@ -1,28 +1,15 @@
 import fs from "fs";
 import crypto from "crypto";
 import puppeteer from "puppeteer";
+import FormData from "form-data"; // use form-data package
 import fetch from "node-fetch";
-import pkg from "undici"; // <-- import undici as default
-const { FormData, fileFromSync } = pkg; // <-- destructure the functions
 
 const SCHEDULE_URL = "https://kaikatvt.carrd.co/#schedule";
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const ROLE_ID = "1353762877705682984";
 const LAST_HASH_FILE = ".last_posted_hash.txt";
 
-function getHash(text) {
-  return crypto.createHash("sha256").update(text).digest("hex");
-}
-
-function readLastHash() {
-  return fs.existsSync(LAST_HASH_FILE)
-    ? fs.readFileSync(LAST_HASH_FILE, "utf8")
-    : null;
-}
-
-function writeLastHash(hash) {
-  fs.writeFileSync(LAST_HASH_FILE, hash);
-}
+// ...hash functions remain the same...
 
 async function run() {
   console.log("Checking schedule...");
@@ -37,32 +24,33 @@ async function run() {
   await page.goto(SCHEDULE_URL, { waitUntil: "networkidle0" });
 
   const scheduleText = await page.$eval("#table03", el => el.innerText.trim());
-  const hash = getHash(scheduleText);
-  const lastHash = readLastHash();
+  const hash = crypto.createHash("sha256").update(scheduleText).digest("hex");
+  const lastHash = fs.existsSync(LAST_HASH_FILE)
+    ? fs.readFileSync(LAST_HASH_FILE, "utf8")
+    : null;
 
   console.log("Current hash:", hash);
   console.log("Last posted hash:", lastHash);
 
   if (hash === lastHash) {
-    console.log("No change from the most recent posted schedule — exiting.");
+    console.log("No change from last post — exiting.");
     await browser.close();
     return;
   }
 
-  // Screenshot schedule container
+  // Screenshot
   const container = await page.$("#container03");
   const screenshotBuffer = await container.screenshot({ type: "png" });
   await browser.close();
 
-  // Save temp file for undici
-  const tempFilePath = ".schedule.png";
-  fs.writeFileSync(tempFilePath, screenshotBuffer);
+  fs.writeFileSync(".schedule.png", screenshotBuffer);
 
-  // Update last hash BEFORE posting
-  writeLastHash(hash);
+  // Update last hash
+  fs.writeFileSync(LAST_HASH_FILE, hash);
 
+  // Use form-data
   const form = new FormData();
-  form.set(
+  form.append(
     "payload_json",
     JSON.stringify({
       content: `<@&${ROLE_ID}>`,
@@ -78,13 +66,12 @@ async function run() {
       ],
     })
   );
-
-  form.set("file", fileFromSync(tempFilePath));
+  form.append("file", fs.createReadStream(".schedule.png"));
 
   await fetch(WEBHOOK_URL, { method: "POST", body: form });
-  console.log("Posted new schedule version successfully.");
+  console.log("Posted new schedule successfully.");
 
-  fs.unlinkSync(tempFilePath);
+  fs.unlinkSync(".schedule.png");
 }
 
 run();
